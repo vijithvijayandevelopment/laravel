@@ -1,0 +1,107 @@
+version: '3'
+
+networks: 
+    laravel:
+        driver: bridge
+      
+services:
+  apachetest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${APACHE_CONTAINER_NAME}
+    restart: unless-stopped
+    ports:
+      - "${APACHE_HOST_PORT}:${APACHE_CONTAINER_PORT}"
+    volumes:
+      - .:/var/www/html
+      - ./laravel.test.com.conf:/etc/apache2/sites-available/laravel.test.com.conf
+    depends_on:
+      - ${MYSQL_CONTAINER_NAME}
+      - ${MONGO_DB_CONTAINER_NAME}
+      - ${POSTGRES_CONTAINER_NAME}
+    networks: 
+      - ${DOCKER_NETWORK}
+
+  mysqltest:
+    image: mysql:${MYSQL_VERSION}
+    container_name: ${MYSQL_CONTAINER_NAME}
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_HOST_PORT}:${MYSQL_CONTAINER_PORT}"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    networks: 
+      - ${DOCKER_NETWORK}
+      
+  postgrestest:
+    image: postgres:${POSTGRES_VERSION}
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_HOST_PORT}:${POSTGRES_CONTAINER_PORT}"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: 
+      - ./postgres_data:/var/lib/postgresql/data
+    networks: 
+      - ${DOCKER_NETWORK}
+      
+  mongodbtest:
+    image: mongo:${MONGO_DB_VERSION}
+    container_name: ${MONGO_DB_CONTAINER_NAME}
+    restart: unless-stopped
+    ports:
+      - "${MONGO_DB_HOST_PORT}:${MONGO_DB_CONTAINER_PORT}"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_DB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_ROOT_PASSWORD}
+    volumes:
+      - ./mongodb_data:/data/db
+    networks:
+      - ${DOCKER_NETWORK}
+
+  phpmyadmintest:
+    image: phpmyadmin/phpmyadmin
+    container_name: ${PHPMYADMIN_CONTAINER_NAME}
+    restart: unless-stopped
+    ports:
+      - "${PHPMYADMIN_PORT}:${PHPMYADMIN_HOST_PORT}"
+    environment:
+      PMA_HOST: ${MYSQL_HOST}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    depends_on:
+      - ${MYSQL_CONTAINER_NAME}
+    networks: 
+      - ${DOCKER_NETWORK}
+      
+  pgadmin:
+    image: dpage/pgadmin4:${PGADMIN_VERSION}
+    container_name: ${PGADMIN_CONTAINER_NAME}
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_LISTEN_PORT: ${PGADMIN_LISTEN_PORT}
+    ports:
+      - "${PGADMIN_PORT}:${PGADMIN_HOST_PORT}"
+    depends_on:
+      - ${POSTGRES_CONTAINER_NAME}
+    networks: 
+      - ${DOCKER_NETWORK}
+  
+  redistest:
+    image: redis:${REDIS_VERSION}
+    container_name: ${REDIS_CONTAINER_NAME}
+    restart: unless-stopped
+    ports:
+      - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
+    networks:
+      - ${DOCKER_NETWORK}
